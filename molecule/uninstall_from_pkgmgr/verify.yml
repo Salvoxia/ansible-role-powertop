@@ -1,0 +1,23 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Check if powertop is in PATH
+      ansible.builtin.command: which powertop
+      changed_when: false
+      failed_when: powertop_install_check_result.rc not in [0, 1]
+      register: powertop_install_check_result
+
+    - name: Verify that Powertop is not installed
+      ansible.builtin.assert:
+        that:
+          - powertop_install_check_result.rc == 1
+
+    - name: Gather installed services
+      ansible.builtin.service_facts:
+
+    - name: Verify powertop services are not present
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['powertop.service'] is undefined

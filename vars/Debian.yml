@@ -1,0 +1,6 @@
+---
+__powertop_is_supported_os: true
+__powertop_supported_os_versions:
+  - '11'
+  - '12'
+__powertop_apt_source: 'http://deb.debian.org/debian'

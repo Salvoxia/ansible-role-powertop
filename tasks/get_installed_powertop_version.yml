@@ -1,0 +1,46 @@
+# This determines if Powertop is installed and sets
+# the following facts:
+#   - 'powertop_installed' (boolean)
+#   - 'powertop_installed_version' (format 'v<major>.<minor>.<patch>') (only if powertop_installed)
+#   - 'powertop_installed_from_pkgmgr' (boolean) (only if powertop_installed)
+# After running this task, check if Powertop is installed by checking "powertop_installed"
+---
+- name: Determine if Powertop is installed and its version
+  block:
+    - name: Check if Powertop is installed
+      ansible.builtin.command: which powertop
+      changed_when: false
+      become: true
+      failed_when: powertop_install_check_result.rc not in [0,1]
+      register: powertop_install_check_result
+
+    - name: Evaluating check result
+      ansible.builtin.set_fact:
+        powertop_installed: "{{ powertop_install_check_result.rc in [0] }}"
+
+    - name: Get installed Powertop version
+      ansible.builtin.command: powertop --version
+      changed_when: false
+      become: true
+      register: powertop_help_result
+      when: powertop_installed
+
+    - name: Extract powertop version
+      ansible.builtin.set_fact:
+        # powertop_upsc_help_result.stdout_lines[0] could look like this: "PowerTOP version 2.15"
+        powertop_installed_version: "v{{ powertop_help_result.stdout_lines[0] | regex_search('.*(\\d+\\.\\d+).*', '\\1') | first }}"
+      when: powertop_installed
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+      when: powertop_installed
+
+    - name: Initialize powertop_installed_from_pkgmgr
+      ansible.builtin.set_fact:
+        powertop_installed_from_pkgmgr: false
+      when: powertop_installed
+
+    - name: Set powertop_installed_from_pkgmgr
+      ansible.builtin.set_fact:
+        powertop_installed_from_pkgmgr: true
+      when: powertop_installed and ansible_facts.packages['powertop'] is defined

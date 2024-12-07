@@ -1,0 +1,27 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Verify Powertop is installed
+      ansible.builtin.include_tasks: ../../tasks/get_installed_powertop_version.yml
+
+    - name: Assert Powertop is installed
+      ansible.builtin.assert:
+        that: powertop_installed
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+
+    - name: Assert Powertop is installed via Package Manager
+      ansible.builtin.assert:
+        that: ansible_facts.packages['powertop'] is defined
+
+    - name: Gather installed services
+      ansible.builtin.service_facts:
+
+    - name: Assert Powertop service is installed and enabled
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['powertop.service'] is defined
+          - ansible_facts.services['powertop.service'].status == 'enabled'

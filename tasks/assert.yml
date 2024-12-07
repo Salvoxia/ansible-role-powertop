@@ -1,0 +1,32 @@
+---
+- name: Verify powertop_verify_os
+  ansible.builtin.assert:
+    that:
+      - powertop_verify_os == powertop_verify_os|bool
+    fail_msg: "powertop_verify_os must be bool!"
+
+- name: Verify powertop_manage_service
+  ansible.builtin.assert:
+    that:
+      - powertop_manage_service == powertop_manage_service|bool
+    fail_msg: "powertop_manage_service must be bool!"
+
+- name: Verify powertop_install_from_source
+  ansible.builtin.assert:
+    that:
+      - powertop_install_from_source == powertop_install_from_source|bool
+    fail_msg: "powertop_install_from_source must be bool!"
+
+- name: Verify operating system
+  ansible.builtin.assert:
+    that:
+      - __powertop_is_supported_os is defined
+      - __powertop_is_supported_os
+      - ansible_facts['distribution_major_version'] in __powertop_supported_os_versions
+    fail_msg: "{{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_major_version'] }} is not supoorted by this role! Try setting powertop_verify_os to false!"
+  when: powertop_verify_os
+
+- name: Verify powertop_state
+  ansible.builtin.assert:
+    that: powertop_state in ['present', 'absent']
+    fail_msg: Variable powertop_state must be one of ['present', 'absent']!

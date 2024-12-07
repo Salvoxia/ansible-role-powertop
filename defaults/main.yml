@@ -1,0 +1,24 @@
+---
+# Indicates whether to install or remove Powertop
+powertop_state: present
+
+# Flag indicating whether to check for a known compatible operating system and version;
+# Set to false to run on untested OS
+powertop_verify_os: true
+# Flag indicating whether to compile and install Powertop from source instead of a package manager
+powertop_install_from_source: false
+# Git source repository to use when installing NUT from source
+powertop_source_repository: https://github.com/fenrus75/powertop.git
+# The Git tag to compile when installing NUT from source
+powertop_source_tag: v2.15
+# Flag indicating whether to install a systemd service running powertop --auto-tune at startup
+powertop_manage_service: true
+# Name of the service
+powertop_service_name: "powertop"
+# Variables for compiling powertop from source
+powertop_libtraceevent_install_from_source: true
+powertop_libtraceevent_source_repository: https://git.kernel.org/pub/scm/libs/libtrace/libtraceevent.git
+powertop_libtraceevent_source_tag: "libtraceevent-1.8.4"
+powertop_libtracefs_install_from_source: true
+powertop_libtracefs_source_repository: https://git.kernel.org/pub/scm/libs/libtrace/libtracefs.git
+powertop_libtracefs_source_tag: "libtracefs-1.8.1"

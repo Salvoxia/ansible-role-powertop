@@ -1,0 +1,39 @@
+---
+- name: Create and enable powertop service
+  when: powertop_state == "present" and powertop_manage_service
+  block:
+    - name: Configure systemd service
+      ansible.builtin.template:
+        src: "powertop.service.j2"
+        dest: "/etc/systemd/system/{{ powertop_service_name }}.service"
+        mode: "0644"
+      notify:
+        - Systemctl daemon-reload
+
+    - name: Enable powertop service
+      ansible.builtin.service:
+        name: "{{ powertop_service_name }}"
+        state: stopped
+        enabled: true
+
+- name: Disable and remove powertop service
+  when: powertop_state == "absent" and powertop_manage_service
+  block:
+    - name: Gather installed services
+      ansible.builtin.service_facts:
+
+    - name: Disable systemd service
+      ansible.builtin.systemd_service:
+        enabled: false
+        name: "{{ powertop_service_name }}.service"
+      notify:
+        - Systemctl daemon-reload
+      when: ansible_facts.services['powertop_service_name.service'] is defined
+
+    - name: Remove systemd service
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ powertop_service_name }}.service"
+        state: absent
+      notify:
+        - Systemctl daemon-reload
+      when: ansible_facts.services['powertop_service_name.service'] is defined

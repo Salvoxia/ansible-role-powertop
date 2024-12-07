@@ -1,0 +1,61 @@
+# ansible-playbook --extra-vars 'host=<inventoryName>' --extra-vars 'serial-console=ttyS0' --extra-vars 'serial-console-baudrate=11200' install-docker.yml
+---
+- name: Include OS-specific variables.
+  ansible.builtin.include_vars: "{{ ansible_facts['distribution'] }}.yml"
+
+- name: Verify Variables
+  ansible.builtin.include_tasks: assert.yml
+
+- name: Get installed Powertop version
+  ansible.builtin.include_tasks: get_installed_powertop_version.yml
+
+- name: Uninstall Powertop
+  ansible.builtin.include_tasks: uninstall.yml
+  when: powertop_installed and (
+          powertop_state == 'absent'
+          or (powertop_install_from_source and ((powertop_source_tag != powertop_installed_version) or powertop_installed_from_pkgmgr))
+        )
+
+- name: Get installed Powertop version
+  ansible.builtin.include_tasks: get_installed_powertop_version.yml
+  when: powertop_installed and (
+          powertop_state == 'absent'
+          or (powertop_install_from_source and ((powertop_source_tag != powertop_installed_version) or powertop_installed_from_pkgmgr))
+        )
+
+- name: Install powertop from package manager
+  ansible.builtin.package:
+    name: powertop
+    update_cache: true
+    state: present
+  when: powertop_state == 'present' and (not powertop_installed or not powertop_installed_from_pkgmgr) and not powertop_install_from_source
+
+- name: Install powertop from source
+  ansible.builtin.include_tasks: install_uninstall_from_source.yml
+  vars:
+    powertop_source_install_from_source: "{{ powertop_install_from_source }}"
+    powertop_source_state: "{{ powertop_state }}"
+  when: powertop_state == 'present' and not powertop_installed and powertop_install_from_source
+
+- name: Create and enable powertop service
+  when: powertop_state == 'present' and powertop_manage_service
+  block:
+    - name: Configure systemd service
+      ansible.builtin.template:
+        src: "powertop.service.j2"
+        dest: "/etc/systemd/system/{{ powertop_service_name }}.service"
+        mode: "0644"
+      notify:
+        - Systemctl daemon-reload
+
+    - name: Enable powertop service
+      ansible.builtin.service:
+        name: "{{ powertop_service_name }}"
+        state: stopped
+        enabled: true
+
+- name: Remove Sources
+  ansible.builtin.file:
+    path: "{{ powertop_dir }}"
+    state: absent
+  when: powertop_dir is defined

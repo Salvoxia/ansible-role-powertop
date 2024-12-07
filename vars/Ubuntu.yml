@@ -1,0 +1,6 @@
+---
+__powertop_is_supported_os: true
+__powertop_supported_os_versions:
+  - '22'
+  - '24'
+__powertop_apt_source: 'http://archive.ubuntu.com/ubuntu'

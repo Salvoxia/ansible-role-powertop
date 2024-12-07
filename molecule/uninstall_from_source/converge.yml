@@ -1,0 +1,3 @@
+---
+- name: Uninstall Powertop
+  ansible.builtin.import_playbook: ../uninstall_from_pkgmgr/converge.yml

@@ -1,0 +1,3 @@
+---
+- name: Verify Powertop is no longer installed
+  ansible.builtin.import_playbook: ../uninstall_from_pkgmgr/verify.yml

@@ -1,0 +1,39 @@
+# This task assumes it is only called if Powertop should be removed, it does NOT
+# check powertop_state itself!
+---
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+
+- name: Uninstall Powertop from source
+  when: "powertop_installed and ansible_facts.packages['powertop'] is not defined"
+  block:
+    - name: Set uninstall variables
+      ansible.builtin.set_fact:
+        powertop_source_state: absent
+        powertop_source_install_from_source: true
+
+    - name: Uninstall Powertop from source
+      ansible.builtin.include_tasks: install_uninstall_from_source.yml
+
+- name: Remove Powertop via package manager
+  ansible.builtin.package:
+    name: powertop
+    state: absent
+  when: "powertop_installed and ansible_facts.packages['powertop'] is defined"
+
+- name: Uninstall Service
+  when: powertop_manage_service
+  block:
+    - name: Disable systemd service
+      ansible.builtin.systemd_service:
+        enabled: false
+        name: "{{ powertop_service_name }}.service"
+      notify:
+        - Systemctl daemon-reload
+
+    - name: Remove systemd service
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ powertop_service_name }}.service"
+        state: absent
+      notify:
+        - Systemctl daemon-reload

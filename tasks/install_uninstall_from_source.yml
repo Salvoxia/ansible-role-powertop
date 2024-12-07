@@ -1,0 +1,139 @@
+# This task performs a Git Clone and checkout operation on the desired source tag,
+# runs "configure", "make" and finally "make install" or "make uninstall" for libtraceevent,
+# libtracefs and powertop itself.
+# Sources are removed in the end.
+#
+# It does NOT use the role's main variables 'powertop_state' variable but a specific 'powertop_source_state' variable
+# - powertop_source_state
+# - powertop_source_install_from_source
+---
+- name: Get installed Powertop version
+  ansible.builtin.include_tasks: get_installed_powertop_version.yml
+
+- name: Install build prerequisites, clone and configure libtraceevent, libtracefs and powertop
+  when: powertop_source_install_from_source and (
+          (not powertop_installed and powertop_source_state == 'present')
+          or
+          ( powertop_installed and powertop_source_state == 'absent' )
+        )
+  block:
+    - name: Install dependencies
+      ansible.builtin.package:
+        name:
+          - libpci-dev
+          - libnl-3-dev
+          - libnl-genl-3-dev
+          - gettext
+          - libgettextpo-dev
+          - autopoint
+          - libncurses5-dev
+          - libncursesw5-dev
+          - libtool-bin
+          - make
+          - pkg-config
+          - g++
+          - autoconf-archive
+          - git
+          # Required for uninstalling libtracefs, only missing on Ubuntu 24.02
+          - flex
+          - bison
+        update_cache: true
+        state: "present"
+
+    - name: Create temp dir for powertop
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: powertop
+      register: powertop_temp_dir
+
+    - name: Set powertop temp directory fact
+      ansible.builtin.set_fact:
+        powertop_dir: "{{ powertop_temp_dir.path }}"
+
+    - name: Git Clone libtraceevent
+      ansible.builtin.git:
+        repo: '{{ powertop_libtraceevent_source_repository }}'
+        dest: "{{ powertop_dir }}/libtraceevent"
+        version: "{{ powertop_libtraceevent_source_tag }}"
+      when: powertop_libtraceevent_install_from_source
+
+    - name: Git Clone libtracefs
+      ansible.builtin.git:
+        repo: '{{ powertop_libtracefs_source_repository }}'
+        dest: "{{ powertop_dir }}/libtracefs"
+        version: "{{ powertop_libtracefs_source_tag }}"
+      when: powertop_libtracefs_install_from_source
+
+    - name: Git Clone Powertop
+      ansible.builtin.git:
+        repo: '{{ powertop_source_repository }}'
+        dest: "{{ powertop_dir }}/powertop"
+        version: "{{ powertop_source_tag }}"
+
+    - name: Run Powertop autogen
+      ansible.builtin.command:
+        chdir: "{{ powertop_dir }}/powertop"
+        cmd: "./autogen.sh"
+      become: true
+      changed_when: true
+
+    - name: Run Powertop configure
+      ansible.builtin.command:
+        chdir: "{{ powertop_dir }}/powertop"
+        cmd: "./configure"
+      become: true
+      changed_when: true
+
+
+- name: Install libtraceevent, libtracefs and powertop from source
+  when: powertop_source_install_from_source and not powertop_installed and powertop_source_state == "present"
+  block:
+    - name: Make libtraceevent
+      community.general.make:
+        chdir: "{{ powertop_dir }}/libtraceevent"
+      when: powertop_libtraceevent_install_from_source
+
+    - name: Install libtraceevent
+      community.general.make:
+        chdir: "{{ powertop_dir }}/libtraceevent"
+        target: install
+      when: powertop_libtraceevent_install_from_source
+
+    - name: Make libtracefs
+      community.general.make:
+        chdir: "{{ powertop_dir }}/libtracefs"
+      when: powertop_libtracefs_install_from_source
+
+    - name: Install libtracefs
+      community.general.make:
+        chdir: "{{ powertop_dir }}/libtracefs"
+        target: install
+      when: powertop_libtracefs_install_from_source
+
+    - name: Install Powertop
+      community.general.make:
+        chdir: "{{ powertop_dir }}/powertop"
+        target: install
+      become: true
+
+- name: Uninstall libtraceevent, libtracefs and powertop from source
+  when: powertop_source_install_from_source and powertop_installed and powertop_source_state == "absent"
+  block:
+    - name: Uninstall Powertop
+      community.general.make:
+        chdir: "{{ powertop_dir }}/powertop"
+        target: uninstall
+      become: true
+
+    - name: Uninstall libtracefs
+      community.general.make:
+        chdir: "{{ powertop_dir }}/libtracefs"
+        target: uninstall
+      when: powertop_libtracefs_install_from_source
+
+    - name: Uninstall libtraceevent
+      community.general.make:
+        chdir: "{{ powertop_dir }}/libtraceevent"
+        target: uninstall
+      when: powertop_libtraceevent_install_from_source
+      become: true

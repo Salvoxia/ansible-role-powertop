@@ -1,0 +1,22 @@
+---
+galaxy_info:
+  author: salvoxia
+  role_name: powertop
+  description: Installs Powertop on Debian based systems, even from source if the package manager's version does not support your CPU properly.
+  issue_tracker_url: https://github.com/salvoxia/ansible-role-powertop/issues
+  license: MIT
+  min_ansible_version: "2.5"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+  galaxy_tags:
+    - powertop
+    - hardware
+    - powertoptimization
+
+dependencies: []

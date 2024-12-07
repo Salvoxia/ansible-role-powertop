@@ -1,0 +1,3 @@
+---
+- name: Verify installation from source
+  ansible.builtin.import_playbook: ../install_from_source/verify.yml

@@ -1,5 +1,6 @@
 # Ansible Role: Powertop
 [![Build Status](https://github.com/salvoxia/ansible-role-powertop/workflows/CI/badge.svg)](https://github.com/Salvoxia/ansible-role-powert/actions/workflows/ci.yml)
+[![Ansible Galaxy Downloads](https://img.shields.io/badge/dynamic/json?color=blueviolet&label=Galaxy%20Downloads&query=%24.download_count&url=https%3A%2F%2Fgalaxy.ansible.com%2Fapi%2Fv1%2Froles%2F39742%2F%3Fformat%3Djson)](https://galaxy.ansible.com/ui/standalone/roles/salvoxia/powertop/)
 
 Installs [Powertop](https://github.com/fenrus75/powertop) on Debian based systems, from source if the package manager's version does not support your CPU properly.
 Also installs a one-shot type service to automatically optimize power consumption at system startup.

@@ -95,12 +95,12 @@
           ansible.builtin.set_fact:
             # gettext_upsc_help_result.stdout_lines[0] could look like this: "gettext (GNU gettext-runtime) 0.23.1"
             gettext_installed_version: "{{ gettext_help_result.stdout_lines[0] | regex_search('.*(\\d+\\.\\d+\\.\\d+).*', '\\1') | first }}"
-          when: gettext_installed
+          when: gettext_help_result is defined
 
         - name: Replace gettext version in configure.ac
           ansible.builtin.replace:
             path: "{{ powertop_dir }}/powertop/configure.ac"
-            regexp: "^AM_GNU_GETTEXT_VERSION\\(\\[\\d+\\.\\d+\\.\\d+\\]\\)$"
+            regexp: "^AM_GNU_GETTEXT_VERSION\\(\\[\\d+\\.\\d+(\\.\\d+)*\\]\\)$"
             replace: "AM_GNU_GETTEXT_VERSION([{{ gettext_installed_version }}])"
           when: gettext_installed_version is defined
 

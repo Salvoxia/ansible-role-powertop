@@ -34,6 +34,7 @@
           - g++
           - autoconf-archive
           - git
+          - gnulib
           # Required for uninstalling libtracefs, only missing on Ubuntu 24.02
           - flex
           - bison
@@ -70,10 +71,43 @@
         dest: "{{ powertop_dir }}/powertop"
         version: "{{ powertop_source_tag }}"
 
-    - name: Run Powertop autogen
-      ansible.builtin.command:
+    - name: Update used gettext macro version in configure.ac
+      block:
+        - name: Check if gettext is installed
+          ansible.builtin.command: which gettext
+          changed_when: false
+          become: true
+          register: gettext_install_check_result
+          failed_when: gettext_install_check_result.rc not in [0,1]
+
+        - name: Evaluating check result
+          ansible.builtin.set_fact:
+            gettext_installed: "{{ gettext_install_check_result.rc in [0] }}"
+
+        - name: Get installed gettext version
+          ansible.builtin.command: gettext --version
+          changed_when: false
+          become: true
+          register: gettext_help_result
+          when: gettext_installed
+
+        - name: Extract gettext version
+          ansible.builtin.set_fact:
+            # gettext_upsc_help_result.stdout_lines[0] could look like this: "gettext (GNU gettext-runtime) 0.23.1"
+            gettext_installed_version: "{{ gettext_help_result.stdout_lines[0] | regex_search('.*(\\d+\\.\\d+\\.\\d+).*', '\\1') | first }}"
+          when: gettext_installed
+
+        - name: Replace gettext version in configure.ac
+          ansible.builtin.replace:
+            path: "{{ powertop_dir }}/powertop/configure.ac"
+            regexp: "^AM_GNU_GETTEXT_VERSION\\(\\[\\d+\\.\\d+\\.\\d+\\]\\)$"
+            replace: "AM_GNU_GETTEXT_VERSION([{{ gettext_installed_version }}])"
+          when: gettext_installed_version is defined
+
+    - name: Run Powertop autopoint (to update gettext macro version) and autoreconf (replaces autogen.sh)
+      ansible.builtin.shell:
         chdir: "{{ powertop_dir }}/powertop"
-        cmd: "./autogen.sh"
+        cmd: "autopoint -f && aclocal && autoupdate && autoheader && env AUTOPOINT=true autoreconf --install"
       become: true
       changed_when: true
 
@@ -83,7 +117,6 @@
         cmd: "./configure"
       become: true
       changed_when: true
-
 
 - name: Install libtraceevent, libtracefs and powertop from source
   when: powertop_source_install_from_source and not powertop_installed and powertop_source_state == "present"

@@ -94,7 +94,7 @@
         - name: Extract gettext version
           ansible.builtin.set_fact:
             # gettext_upsc_help_result.stdout_lines[0] could look like this: "gettext (GNU gettext-runtime) 0.23.1"
-            gettext_installed_version: "{{ gettext_help_result.stdout_lines[0] | regex_search('.*(\\d+\\.\\d+\\.\\d+).*', '\\1') | first }}"
+            gettext_installed_version: "{{ gettext_help_result.stdout_lines[0] | regex_search('.*(\\d+\\.\\d+(\\.\\d+)*).*', '\\1') | first }}"
           when: gettext_help_result is defined
 
         - name: Replace gettext version in configure.ac

@@ -5,10 +5,6 @@ name: Release
     tags:
       - '*'
 
-defaults:
-  run:
-    working-directory: 'salvoxia.powertop'
-
 jobs:
   lint:
     name: Lint
